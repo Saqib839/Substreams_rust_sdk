@@ -49,22 +49,3 @@ pub mod sf {
     }
 }
 
-pub mod uniswap_types_v1 {
-    include!("uniswap.types.v1.rs");  // Include the uniswap.types.v1.rs file
-}
-
-pub mod substreams_entity_change {
-    include!("sf.substreams.entity.v1.rs");  // Include the uniswap.types.v1.rs file
-}
-
-pub mod solana_types_v1 {
-    include!("sf.solana.type.v1.rs");
-}
-
-pub mod sol_block_v1{
-    include!("sol.block.v1.rs");
-}
-
-pub mod sol_transactions_v1{
-    include!("sol.transactions.v1.rs");
-}

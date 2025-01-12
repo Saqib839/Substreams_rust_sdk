@@ -13,13 +13,13 @@ use substreams::SubstreamsEndpoint;
 use substreams_stream::{BlockResponse, SubstreamsStream};
 
 // use pb::uniswap_types_v1::Pools;
-use module_map::MODULES;
+// use module_map::MODULES;
 
 pub mod pb;
 // mod pb;
 mod substreams;
 mod substreams_stream;
-mod module_map; 
+// mod module_map; 
 
 use reqwest::Client;
 use serde_json::{json, Value};
@@ -129,7 +129,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     break;
                 }
                 Some(Ok(BlockResponse::New(data))) => {
-                    process_block_scoped_data(&data, &module_name)?;
+                    process_block_scoped_data(&data)?;
                     persist_cursor(data.cursor)?;
                 }
                 Some(Ok(BlockResponse::Undo(undo_signal))) => {
@@ -191,7 +191,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn process_block_scoped_data(data: &BlockScopedData, module_name: &str) -> Result<(), Error> {
+fn process_block_scoped_data(data: &BlockScopedData) -> Result<(), Error> {
     let output = data.output.as_ref().unwrap().map_output.as_ref().unwrap();
 
     // You can decode the actual Any type received using this code:
@@ -202,11 +202,11 @@ fn process_block_scoped_data(data: &BlockScopedData, module_name: &str) -> Resul
     // let value = Pools::decode(output.value.as_slice())?;
 
     // Get the decoder for the module
-    let decoder = MODULES
-        .get(module_name)
-        .ok_or_else(|| anyhow::anyhow!("Unknown module: {}", module_name))?;
+    // let decoder = MODULES
+    //     .get(module_name)
+    //     .ok_or_else(|| anyhow::anyhow!("Unknown module: {}", module_name))?;
 
-    let value = decoder(output.value.as_slice())?;
+    // let value = decoder(output.value.as_slice())?;
     
     //
     // Where GeneratedStructName is the Rust code generated for the Protobuf representing
@@ -220,7 +220,7 @@ fn process_block_scoped_data(data: &BlockScopedData, module_name: &str) -> Resul
 
 
     if output.value.len() > 0 {
-        println!("{:?}", value);  // For Debug output
+        println!("{:?}", output.value);  // For Debug output
         println!();
         // println!("Block #{} - Payload {} ({} bytes) - Drift {}s",
         //     clock.number,
