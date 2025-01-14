@@ -191,9 +191,9 @@ fn process_block_scoped_data(
     let output = data.output.as_ref().unwrap().map_output.as_ref().unwrap();
 
     // Get the decoder for the module
-    let decoder = MODULES
-        .get(module_name)
-        .ok_or_else(|| anyhow::anyhow!("Unknown module: {}", module_name))?;
+    // let decoder = MODULES
+    //     .get(module_name)
+    //     .ok_or_else(|| anyhow::anyhow!("Unknown module: {}", module_name))?;
 
     if output.value.is_empty() {
         // Return a specific error for empty blocks
@@ -201,9 +201,9 @@ fn process_block_scoped_data(
     }
 
     // Decode the value
-    let decoded_value = decoder(output.value.as_slice())?;
+    // let decoded_value = decoder(output.value.as_slice())?;
 
-    Ok(decoded_value)
+    Ok(Box::new(output.value.clone()))
 }
 
 
