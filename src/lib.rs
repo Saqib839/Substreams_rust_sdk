@@ -37,7 +37,7 @@ pub async fn run_substream(
     package_file: &str,
     module_name: &str,
     range: Option<String>,
-) -> Result<Vec<Box<dyn std::fmt::Debug>>, Error> {
+) -> Result<Vec<Vec<u8>>, Error> {
     let endpoint_url = if endpoint_url.starts_with("http") {
         endpoint_url
     } else {
@@ -187,7 +187,7 @@ pub async fn api_call(
 fn process_block_scoped_data(
     data: &BlockScopedData,
     module_name: &str,
-) -> Result<Box<dyn std::fmt::Debug>, Error> {
+) -> Result<Vec<u8>, Error> {
     let output = data.output.as_ref().unwrap().map_output.as_ref().unwrap();
 
     // Get the decoder for the module
@@ -203,7 +203,7 @@ fn process_block_scoped_data(
     // Decode the value
     // let decoded_value = decoder(output.value.as_slice())?;
 
-    Ok(Box::new(output.value.clone()))
+    Ok(output.value.clone())
 }
 
 
