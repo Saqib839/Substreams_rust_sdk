@@ -1236,28 +1236,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
-name = "reqstreams"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-stream",
- "chrono",
- "futures 0.3.31",
- "lazy_static",
- "prost",
- "prost-types",
- "regex",
- "reqwest",
- "semver",
- "serde_json",
- "thiserror",
- "tokio",
- "tokio-retry",
- "tokio-stream",
- "tonic",
-]
-
-[[package]]
 name = "reqwest"
 version = "0.11.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1858,6 +1836,28 @@ name = "unicode-ident"
 version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e91b56cd4cadaeb79bbf1a5645f6b4f8dc5bde8834ad5894a8db35fda9efa1fe"
+
+[[package]]
+name = "unifiedstreams"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-stream",
+ "chrono",
+ "futures 0.3.31",
+ "lazy_static",
+ "prost",
+ "prost-types",
+ "regex",
+ "reqwest",
+ "semver",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-retry",
+ "tokio-stream",
+ "tonic",
+]
 
 [[package]]
 name = "untrusted"
