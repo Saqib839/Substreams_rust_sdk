@@ -100,34 +100,6 @@ pub extern "C" fn substreams_call_ffi(
     }
 }
 
-// Free a string pointer
-#[no_mangle]
-pub extern "C" fn free_string(ptr: *mut c_char) {
-    if ptr.is_null() {
-        return;
-    }
-    unsafe {
-        let _ = CString::from_raw(ptr); // Safely deallocates the memory
-    }
-}
-
-// Free a byte array
-#[no_mangle]
-pub extern "C" fn free_byte_array(ptr: *mut FfiByteArray, length: usize) {
-    if ptr.is_null() {
-        return;
-    }
-
-    unsafe {
-        let slice = std::slice::from_raw_parts_mut(ptr, length);
-        for array in &mut *slice {
-            let _ = Vec::from_raw_parts(array.data, array.length, array.length);
-        }
-        let _ = Box::from_raw(slice);
-    }
-}
-
-
 
 #[no_mangle]
 pub extern "C" fn rpc_call_ffi(
@@ -136,29 +108,33 @@ pub extern "C" fn rpc_call_ffi(
     params_input: *const c_char,
     id: i32,
 ) -> *mut c_char {
-    if rpc_endpoint.is_null() || method.is_null() || params_input.is_null() {
-        return FfiString::new("Error: Null pointer passed".to_string()).as_ptr();
-    }
+    println!("rpc_call_ffi: Starting");
 
+    // Convert inputs
     let rpc_endpoint = unsafe { CStr::from_ptr(rpc_endpoint).to_string_lossy().to_string() };
     let method = unsafe { CStr::from_ptr(method).to_string_lossy().to_string() };
     let params_input = unsafe { CStr::from_ptr(params_input).to_string_lossy().to_string() };
 
+    println!("rpc_call_ffi: Received rpc_endpoint={}, method={}, params_input={}, id={}",
+        rpc_endpoint, method, params_input, id);
+
+    // Perform the RPC call
     let result = RUNTIME.block_on(rpc_call(&rpc_endpoint, &method, &params_input, id));
 
     match result {
-        Ok(value) => {
-            let ffi_string = FfiString::new(value.to_string());
-            println!("rpc_call_ffi: Allocated pointer {:?}", ffi_string.as_ptr());
-            ffi_string.as_ptr()
+        Ok(json) => {
+            let json_string = serde_json::to_string(&json).unwrap();
+            println!("rpc_call_ffi: Successfully received JSON response: {}", json_string);
+            FfiString::new(json_string).as_ptr()
         }
         Err(err) => {
-            let ffi_string = FfiString::new(format!("Error: {}", err));
-            println!("rpc_call_ffi: Allocated error pointer {:?}", ffi_string.as_ptr());
-            ffi_string.as_ptr()
+            let error_message = format!("rpc_call_ffi: Error performing RPC call: {}", err);
+            println!("{}", error_message);
+            FfiString::new(error_message).as_ptr()
         }
     }
 }
+
 
 #[no_mangle]
 pub extern "C" fn api_call_ffi(
@@ -186,35 +162,28 @@ pub extern "C" fn api_call_ffi(
     }
 }
 
-// #[no_mangle]
-// pub extern "C" fn substreams_call_ffi(
-//     endpoint_url: *const c_char,
-//     package_file: *const c_char,
-//     module_name: *const c_char,
-//     range: *const c_char,
-// ) -> *mut c_char {
-//     if endpoint_url.is_null() || package_file.is_null() || module_name.is_null() {
-//         return CString::new("Null pointer passed").unwrap().into_raw();
-//     }
+// Free a string pointer
+#[no_mangle]
+pub extern "C" fn free_string(ptr: *mut c_char) {
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let _ = CString::from_raw(ptr); // Safely deallocates the memory
+    }
+}
 
-//     let endpoint_url = unsafe { CStr::from_ptr(endpoint_url).to_string_lossy().to_string() };
-//     let package_file = unsafe { CStr::from_ptr(package_file).to_string_lossy().to_string() };
-//     let module_name = unsafe { CStr::from_ptr(module_name).to_string_lossy().to_string() };
-//     let range = unsafe {
-//         if range.is_null() {
-//             None
-//         } else {
-//             Some(CStr::from_ptr(range).to_string_lossy().to_string())
-//         }
-//     };
-
-//     let result = RUNTIME.block_on(substreams_call(endpoint_url, &package_file, &module_name, range));
-
-//     match result {
-//         Ok(debug_values) => {
-//             let output = format!("{:?}", debug_values);
-//             CString::new(output).unwrap().into_raw()
-//         }
-//         Err(err) => CString::new(format!("Error: {}", err)).unwrap().into_raw(),
-//     }
-// }
+// Free a byte array
+#[no_mangle]
+pub extern "C" fn free_byte_array(ptr: *mut FfiByteArray, length: usize) {
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let slice = std::slice::from_raw_parts_mut(ptr, length);
+        for array in &mut *slice {
+            let _ = Vec::from_raw_parts(array.data, array.length, array.length);
+        }
+        let _ = Box::from_raw(slice);
+    }
+}
