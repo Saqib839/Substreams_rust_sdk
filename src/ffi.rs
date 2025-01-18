@@ -4,6 +4,11 @@ use lazy_static::lazy_static;
 use tokio::runtime::Runtime;
 use crate::{rpc_call, api_call, substreams_call};
 
+// Global tokio runtime
+lazy_static! {
+    static ref RUNTIME: Runtime = Runtime::new().unwrap();
+}
+
 // Struct to represent raw byte array
 #[repr(C)]
 pub struct FfiByteArray {
@@ -50,9 +55,31 @@ impl Drop for FfiString {
     }
 }
 
-// Global tokio runtime
-lazy_static! {
-    static ref RUNTIME: Runtime = Runtime::new().unwrap();
+// Free a string pointer
+#[no_mangle]
+pub extern "C" fn free_string(ptr: *mut c_char) {
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        // Reclaim ownership and free memory
+        let _ = CString::from_raw(ptr);
+    }
+}
+
+// Free a byte array
+#[no_mangle]
+pub extern "C" fn free_byte_array(ptr: *mut FfiByteArray, length: usize) {
+    if ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let slice = std::slice::from_raw_parts_mut(ptr, length);
+        for array in &mut *slice {
+            let _ = Vec::from_raw_parts(array.data, array.length, array.length);
+        }
+        let _ = Box::from_raw(slice);
+    }
 }
 
 // Substreams call for raw bytes
@@ -159,31 +186,5 @@ pub extern "C" fn api_call_ffi(
     match result {
         Ok(response) => CString::new(response).unwrap().into_raw(),
         Err(err) => CString::new(format!("Error: {}", err)).unwrap().into_raw(),
-    }
-}
-
-// Free a string pointer
-#[no_mangle]
-pub extern "C" fn free_string(ptr: *mut c_char) {
-    if ptr.is_null() {
-        return;
-    }
-    unsafe {
-        let _ = CString::from_raw(ptr); // Safely deallocates the memory
-    }
-}
-
-// Free a byte array
-#[no_mangle]
-pub extern "C" fn free_byte_array(ptr: *mut FfiByteArray, length: usize) {
-    if ptr.is_null() {
-        return;
-    }
-    unsafe {
-        let slice = std::slice::from_raw_parts_mut(ptr, length);
-        for array in &mut *slice {
-            let _ = Vec::from_raw_parts(array.data, array.length, array.length);
-        }
-        let _ = Box::from_raw(slice);
     }
 }
