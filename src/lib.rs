@@ -6,30 +6,29 @@ use pb::sf::substreams::rpc::v2::{BlockScopedData, BlockUndoSignal};
 use pb::sf::substreams::v1::Package;
 use regex::Regex;
 use semver::Version;
-
+use rand::random; 
 use prost::Message;
-use std::{env,  sync::Arc};
+use std::{env, sync::Arc};
 use substreams::SubstreamsEndpoint;
 use substreams_stream::{BlockResponse, SubstreamsStream};
+use reqwest::Client;
+use serde_json::{json, Value};
 
 pub mod pb;
 pub mod substreams;
 pub mod substreams_stream;
-
-use reqwest::Client;
-use serde_json::{json, Value};
 // use std::error::Error;
-
 mod ffi;
 pub use ffi::*; // Re-export FFI functions
+
+//-------------------------------------------------------------------------------------------------
 
 lazy_static! {
     static ref MODULE_NAME_REGEXP: Regex = Regex::new(r"^([a-zA-Z][a-zA-Z0-9_-]{0,63})$").unwrap();
 }
-
 const REGISTRY_URL: &str = "https://spkg.io";
 
-// Refactored into lib.rs
+
 pub async fn substreams_call(
     endpoint_url: String,
     package_file: &str,
@@ -89,12 +88,13 @@ pub async fn substreams_call(
     Ok(results)
 }
 
+//-------------------------------------------------------------------------------------------------
+
 pub async fn rpc_call(
     rpc_endpoint: &str,
     method: &str,
     params_input: &str,
-    id: i32,
-) -> Result<Value, anyhow::Error> {
+) -> Result<String, anyhow::Error> {
     // Ensure the endpoint starts with HTTP
     let rpc_endpoint = if rpc_endpoint.starts_with("http") {
         rpc_endpoint.to_string()
@@ -106,12 +106,12 @@ pub async fn rpc_call(
     let params: Value = serde_json::from_str(params_input)
         .context("Invalid JSON for parameters")?;
 
-    // Build the JSON-RPC request body
+    // Build the JSON-RPC request body with a random `id`
     let request_body = json!({
         "jsonrpc": "2.0",
         "method": method,
         "params": params,
-        "id": id
+        "id": random::<u32>(),  // Generate a random `u32` value
     });
 
     // Create an HTTP client
@@ -125,14 +125,23 @@ pub async fn rpc_call(
         .await
         .context("Failed to send RPC call")?;
 
-    // Parse and return the response
+    // Parse the response JSON
     let response_json: Value = response
         .json()
         .await
         .context("Failed to parse RPC response")?;
 
-    Ok(response_json)
+    // Extract the "result" field from the response JSON
+    if let Some(result_value) = response_json.get("result") {
+        // Convert the "result" field into a string
+        let result_string = result_value.to_string();  // Converts it to a string (JSON string format)
+        Ok(result_string)
+    } else {
+        Err(anyhow::anyhow!("No 'result' field found in the RPC response").into())
+    }
 }
+
+//-------------------------------------------------------------------------------------------------
 
 pub async fn api_call(
     api_url: &str,
@@ -180,6 +189,7 @@ pub async fn api_call(
     Ok(response_text)
 }
 
+//-------------------------------------------------------------------------------------------------
 
 fn process_block_scoped_data(
     data: &BlockScopedData,

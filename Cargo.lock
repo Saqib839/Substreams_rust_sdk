@@ -1848,6 +1848,7 @@ dependencies = [
  "lazy_static",
  "prost",
  "prost-types",
+ "rand",
  "regex",
  "reqwest",
  "semver",
