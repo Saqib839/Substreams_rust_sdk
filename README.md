@@ -1,4 +1,4 @@
-# Substreams Sink Rust
+# Rust Substreams General Client
 
 This repository show cases a functional base Rust project that consumes a Substreams `.spkg` (local or remote file).
 
